@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from streamlit.components.v1 import html
 
@@ -7,14 +8,13 @@ import piexif
 import base64
 import io
 
-# Add a tracking token
-html('<script async defer data-website-id="<your_website_id>" src="https://analytics.gnps2.org/umami.js"></script>', width=0, height=0)
 
 def get_image_download_link(img, img_format, filename, text):
     buffered = io.BytesIO()
     img.save(buffered, format=img_format)
     img_str = base64.b64encode(buffered.getvalue()).decode()
     href = f'<a href="data:image/{img_format.lower()};base64,{img_str}" download="{filename}">{text}</a>'
+
     return href
 
 
@@ -30,16 +30,6 @@ def page_config():
 
 
 def sidebar():
-    st.sidebar.markdown(
-    """ 
-    <a href="https://twitter.com/cameronjoejones" target="_blank" style="text-decoration: none;">
-        <div style="display: flex; align-items: center;">
-            <img src="https://abs.twimg.com/icons/apple-touch-icon-192x192.png" width="30" height="30">
-            <span style="font-size: 16px; margin-left: 5px;">Follow me on Twitter</span>
-        </div>
-    </a>
-    """, unsafe_allow_html=True
-    )
     st.sidebar.title("About")
     st.sidebar.info(
         """This is a simple web app to remove metadata from images.""")
@@ -50,20 +40,15 @@ def sidebar():
 3. The metadata and image will be displayed.
 4. Download the image without metadata""")
     st.sidebar.title('Credits')
-    st.sidebar.info('''
-        This app was built by Cameron Jones''')
 
 
 def app():
+    # Add a tracking token
+    #html('<script async defer data-website-id="<your_website_id>" src="https://analytics.gnps2.org/umami.js"></script>', width=0, height=0)
+
     st.title('📷 Image Metadata Remover')
-
-    example_image = st.checkbox('Use Example Image')
-
-    if example_image == False:
-        uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg"])
-
-    elif example_image == True:
-        uploaded_file = 'input/streamlit-picture.jpeg'
+    
+    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg"])
 
     button = st.button('Remove Metadata')
 
@@ -90,15 +75,34 @@ def app():
             image_without_exif = Image.new(image.mode, image.size)
             image_without_exif.putdata(data)
 
+            # We want to resize this as well for the web 1600 width and maintain aspect ratio
+            st.write("size:", image.size)
+
+            # Define the target width
+            target_width = 1600
+
+            # Get the original dimensions
+            original_width, original_height = image_without_exif.size
+
+            # Calculate the new height to maintain the aspect ratio
+            aspect_ratio = original_height / original_width
+            new_height = int(target_width * aspect_ratio)
+
+            # Resize the image
+            resized_image = image_without_exif.resize((target_width, new_height), Image.LANCZOS)
+            
             with col2:
-                st.image(image_without_exif, caption='Image without metadata', use_column_width=True)
+                st.image(resized_image, caption='Image without metadata and resized', use_column_width=True)
 
             if exif_dict is not None:
                 st.success('Metadata has been removed successfully!')
             else:
                 st.info('The image did not contain metadata.')
 
-            st.markdown(get_image_download_link(image_without_exif, image.format, 'image_without_metadata.' + image.format.lower(), 'Download image without metadata'), unsafe_allow_html=True)
+            # output filename
+            output_filename = '{}_image_without_metadata.{}'.format(os.path.basename(uploaded_file.name), image.format.lower())
+
+            st.markdown(get_image_download_link(resized_image, image.format, output_filename, 'Download image without metadata'), unsafe_allow_html=True)
 
 
 
