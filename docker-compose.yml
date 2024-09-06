@@ -1,10 +1,10 @@
 version: '3'
 services:
-  template-streamlit:
+  imageprocessor-streamlit:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: template-streamlit
+    container_name: imageprocessor-streamlit
     volumes:
       - ./logs:/app/logs:rw
     networks:
@@ -13,9 +13,9 @@ services:
     restart: unless-stopped
     command: /app/run_server.sh
     environment:
-      VIRTUAL_HOST: streamlittemplate.wanglab.science
+      VIRTUAL_HOST: imageprocessor.wanglab.science
       VIRTUAL_PORT: 5000
-      LETSENCRYPT_HOST: streamlittemplate.wanglab.science
+      LETSENCRYPT_HOST: imageprocessor.wanglab.science
       LETSENCRYPT_EMAIL: mwang87@gmail.com
 
 networks:
